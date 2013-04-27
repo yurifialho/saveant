@@ -64,8 +64,8 @@ function animate() {
 		
 
 		if(ctx && img) {
-			//ctx.fillStyle = "white";
-			//ctx.fillRect(0,0,window.innerWidth,window.innerHeight);
+			ctx.fillStyle = "white";
+			ctx.fillRect(0,0,window.innerWidth,window.innerHeight);
 			ctx.drawImage(bkg,0,0);
 			
 			if( (speedx <= posX+10 && speedx >= posX-10) && (speedy <= posY+10 && speedy >= posY-10) ) {
