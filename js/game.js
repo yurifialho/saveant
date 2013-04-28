@@ -12,6 +12,8 @@ bugImg = null;
 posX = 0;
 posY = 0;
 
+isPaused = false;
+
 function setup() {
 	var body = document.getElementById("body");
 
@@ -24,8 +26,9 @@ function setup() {
 		canvas.width = window.innerWidth;
 		canvas.height = window.innerHeight;
 
-		//canvas.addEventListener("mousemove",moverSpider,false);
 		canvas.addEventListener("mousedown",saveAnt,false);
+		window.addEventListener("keydown",keyboardEvent, true);
+
 	ctx = canvas.getContext("2d");
 	
 	bkg = new Image();
@@ -39,7 +42,6 @@ function setup() {
 
 	createBug();
 
-	//animate();
 	setInterval( function (e) { // Don't do this for time-critical animations
    animate();               // A function that draws the current animation frame
 }, 1000 / 60);
@@ -61,8 +63,6 @@ function animate() {
 			speedx = window.innerWidth;	
 		}
 
-		
-
 		if(ctx && img) {
 			ctx.fillStyle = "white";
 			ctx.fillRect(0,0,window.innerWidth,window.innerHeight);
@@ -77,70 +77,36 @@ function animate() {
 
 			}
 
-			//ctx.fillStyle = "black";
-			//ctx.fillRect(0,0,300,300);
-
-			//ctx.drawImage(bugImg,posX,posY);
-
 			if(bugImg) {
 				ctx.drawImage(bugImg,posX,posY);
 			}
 
 			ctx.drawImage(img,speedx,speedy);
-			
-			if(speedx > sfx) {
-				speedx -= (1 * mpx);
-			} if(speedx < sfx) {
-				speedx += (1 * mpx);
-			} 
+			if(!isPaused) {
+				if(speedx > sfx) {
+					speedx -= (1 * mpx);
+				} if(speedx < sfx) {
+					speedx += (1 * mpx);
+				} 
 
-			if(speedy > sfy) {
-				speedy -= (1 * mpy);
-			} if(speedy < sfy) {
-				speedy += (1 * mpy);
+				if(speedy > sfy) {
+					speedy -= (1 * mpy);
+				} if(speedy < sfy) {
+					speedy += (1 * mpy);
+				}
 			}
-
-
-			//console.log("SPEED: X:"+speedx+" Y:"+speedy);
+			montarMenu();
 		}
-		//setInterval(animate(), 2000);
+		
 	} catch(e) {
 		console.error("Erro: " + e);
 	}
-	
-}
-
-function moverSpider(event) {
-	
-	var x = event.pageX;
-	var y = event.pageY;
-	//console.log("ATUAL: X:"+speedx+" Y:"+speedy);
-	
-	if(sfx == x) {
-		mpx *= 2;
-	} else {
-		mpx = 1;
-	}
-
-	
-	if(sfy == y) {
-		mpy *= 2;
-	} else {
-		mpy = 1;
-	}
-
-	//console.log("NOVA: X:"+x+" Y:"+y);
-	sfx = x;
-	sfy = y;
-
 }
 
 function saveAnt(event) {
 	var x = event.pageX;
 	var y = event.pageY;
-	console.log("TOUCH: X:"+x+" Y:"+y);
-	console.log("ATUAL: X:"+sfx+" Y:"+sfy);
-	if( (x <= posX+30 && x >= posX-30) && (y <= posY+30 && y >= posY-30) ) {
+	if(!isPaused && (x <= posX+30 && x >= posX-30) && (y <= posY+30 && y >= posY-30) ) {
 		alert("Parabéns você salvou a formiguinha....");
 		createBug();
 	}
@@ -169,4 +135,46 @@ function createBug() {
 	bugImg = new Image();
 	bugImg.src = "img/bug_one.png";
 
+}
+
+function montarMenu() {
+	//Titulo
+	ctx.font = '40pt Calibri';
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = 'blue';
+    ctx.strokeText('Save Ant. V1.0', window.innerWidth/2 , 50);
+    //By
+	ctx.font = '10pt sans-serif';
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = 'red';
+    ctx.strokeText('por Yuri Fialho', window.innerWidth/2 , 70);
+    //Pontos
+    ctx.font = '20pt sans-serif';
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = 'blue';
+    ctx.strokeText("Pontos: " + (mpx == 1 ? 0 : (mpx * 100)), 50 , 50);
+    //Tempo
+    var data = new Date();
+    ctx.font = '20pt sans-serif';
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = 'blue';
+    ctx.strokeText("Tempo: " + data.getHours() + ":" + data.getMinutes() + ":" + (data.getSeconds() < 10 ? "0" + data.getSeconds() : data.getSeconds()) , 50 , 100);
+
+    //Pausado
+    if(isPaused) {
+    	//Titulo
+		ctx.font = '40pt Calibri';
+    	ctx.lineWidth = 3;
+    	ctx.strokeStyle = 'red';
+    	ctx.strokeText('Pausado.. (Press P to continue)', 300 , 500);
+    }
+}
+
+function keyboardEvent(event) {
+
+	if(event.keyCode == 80 && isPaused) {
+		isPaused = false;
+	} else if(event.keyCode == 80 && !isPaused) {
+		isPaused = true;
+	}
 }
