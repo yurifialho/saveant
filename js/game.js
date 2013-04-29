@@ -48,7 +48,7 @@ function setup() {
 	bugImg.src = "img/bug_two.png";
 
 	bugHpy = new Image();
-	bugHpy.src = "img/bug_happy.jpg";
+	bugHpy.src = "img/bug_happy.png";
 
 	overImg = new Image();
 	overImg.src = "img/over.png";
