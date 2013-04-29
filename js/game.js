@@ -1,18 +1,25 @@
 ctx = null;
 frameRate = 10000/30;
+
 img = null;
+bkg = null;
+bugImg = null;
+
 speedy = 0;
 speedx = 0;
-mpx = 0;
-mpy = 0;
+mp = 0;
 sfx = 0;
 sfy = 0;
 
-bugImg = null;
-posX = 0;
-posY = 0;
-
 isPaused = false;
+isGameOver = false;
+isStarted = false;
+isSafe = false;
+
+tempoInicial = new Date().getTime();
+tempoFinal = tempoInicial;
+
+nivel = 1;
 
 function setup() {
 	var body = document.getElementById("body");
@@ -37,10 +44,17 @@ function setup() {
 	img = new Image();
 	img.src = "img/pxSpider.gif";
 
+	bugImg = new Image();
+	bugImg.src = "img/bug_two.png";
+
+	bugHpy = new Image();
+	bugHpy.src = "img/bug_happy.jpg";
+
+	overImg = new Image();
+	overImg.src = "img/over.png";
+
 	div.appendChild(canvas);
 	body.appendChild(div);
-
-	createBug();
 
 	setInterval( function (e) { // Don't do this for time-critical animations
    animate();               // A function that draws the current animation frame
@@ -49,132 +63,235 @@ function setup() {
 
 function animate() {
 	try {
-		if(speedy <= 0) {
-			speedy = 0;	
-		}
-		if(speedy >= window.innerHeight) {
-			speedy = window.innerHeight;	
-		}
-
-		if(speedx <= 0) {
-			speedx = 0;	
-		}
-		if(speedx >= window.innerWidth) {
-			speedx = window.innerWidth;	
-		}
-
-		if(ctx && img) {
-			ctx.fillStyle = "white";
-			ctx.fillRect(0,0,window.innerWidth,window.innerHeight);
-			ctx.drawImage(bkg,0,0);
-			
-			if( (speedx <= posX+10 && speedx >= posX-10) && (speedy <= posY+10 && speedy >= posY-10) ) {
-				if(mpx == 1) mpx = 0;
-				alert("Game over, você obteve "  + (mpx * 100) + " pontos.");
-				mpx = 0;
-				mpy = 0;
-				createBug();
-
-			}
-
-			if(bugImg) {
-				ctx.drawImage(bugImg,posX,posY);
-			}
-
-			ctx.drawImage(img,speedx,speedy);
-			if(!isPaused) {
-				if(speedx > sfx) {
-					speedx -= (1 * mpx);
-				} if(speedx < sfx) {
-					speedx += (1 * mpx);
-				} 
-
-				if(speedy > sfy) {
-					speedy -= (1 * mpy);
-				} if(speedy < sfy) {
-					speedy += (1 * mpy);
-				}
-			}
-			montarMenu();
-		}
+		renderBackground();
 		
+		if(isStarted) renderMenu();
+		if(!isStarted && !isGameOver) renderStartGame();
+		if(isGameOver) renderGameOver();
+		if(isPaused) renderPause();
+		if(isSafe) renderSafe();
+
+		if(isStarted && !isGameOver && !isSafe) renderGame();
+		if(isStarted && !isPaused && !isSafe && !isGameOver) {
+			processarPassos();
+			testGameOver()
+		}
+
 	} catch(e) {
 		console.error("Erro: " + e);
 	}
 }
 
-function saveAnt(event) {
-	var x = event.pageX;
-	var y = event.pageY;
-	if(!isPaused && (x <= posX+30 && x >= posX-30) && (y <= posY+30 && y >= posY-30) ) {
-		alert("Parabéns você salvou a formiguinha....");
-		createBug();
-	}
-} 
 
-function createBug() {
-	posX = Math.floor(Math.random()*(window.innerWidth-100));
-	posY = Math.floor(Math.random()*(window.innerHeight-100));
 
-	while (posX < 500) {
-		posX = Math.floor(Math.random()*(window.innerWidth-100));
-	}
-	while (posY < 500) { 
-		posY = Math.floor(Math.random()*(window.innerHeight-100));
-	}
 
-	sfx = posX;
-	sfy = posY;
 
-	mpx += 1;
-	mpy += 1;
-
-	speedy = 0;
-	speedx = 0;
-
-	bugImg = new Image();
-	bugImg.src = "img/bug_one.png";
-
-}
-
-function montarMenu() {
-	//Titulo
-	ctx.font = '40pt Calibri';
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = 'blue';
-    ctx.strokeText('Save Ant. V1.0', window.innerWidth/2 , 50);
-    //By
-	ctx.font = '10pt sans-serif';
-    ctx.lineWidth = 1;
-    ctx.strokeStyle = 'red';
-    ctx.strokeText('por Yuri Fialho', window.innerWidth/2 , 70);
-    //Pontos
-    ctx.font = '20pt sans-serif';
-    ctx.lineWidth = 1;
-    ctx.strokeStyle = 'blue';
-    ctx.strokeText("Pontos: " + (mpx == 1 ? 0 : (mpx * 100)), 50 , 50);
-    //Tempo
-    var data = new Date();
-    ctx.font = '20pt sans-serif';
-    ctx.lineWidth = 1;
-    ctx.strokeStyle = 'blue';
-    ctx.strokeText("Tempo: " + data.getHours() + ":" + data.getMinutes() + ":" + (data.getSeconds() < 10 ? "0" + data.getSeconds() : data.getSeconds()) , 50 , 100);
-
-    //Pausado
-    if(isPaused) {
-    	//Titulo
-		ctx.font = '40pt Calibri';
-    	ctx.lineWidth = 3;
-    	ctx.strokeStyle = 'red';
-    	ctx.strokeText('Pausado.. (Press P to continue)', 300 , 500);
-    }
-}
+/* ACTIONS AND EVENTS */
 
 function keyboardEvent(event) {
-
+	
 	if(event.keyCode == 80 && isPaused) {
 		isPaused = false;
 	} else if(event.keyCode == 80 && !isPaused) {
 		isPaused = true;
+	}
+
+	if(event.keyCode == 13 && !isStarted) {
+		resetGame();
+		isStarted = true
+	} else if(event.keyCode == 13 && isSafe) {
+		isSafe = false;
+	} else if(event.keyCode == 13 && isGameOver) {
+		resetGame();
+	}
+}
+
+function saveAnt(event) {
+	if(isSafe) {
+		isSafe = false;
+	}
+	if(!isStarted) {
+		resetGame();
+		isStarted = true
+	}
+	if(isGameOver) {
+		resetGame();
+	}
+	if(isPaused) {
+		isPaused = false;
+	}
+	var x = event.pageX;
+	var y = event.pageY;
+	testSaveAnt(x, y);
+
+
+} 
+
+function processarPassos() {
+	if(speedy <= 0) {
+		speedy = 0;	
+	}
+	if(speedy >= window.innerHeight) {
+		speedy = window.innerHeight;	
+	}
+	if(speedx <= 0) {
+		speedx = 0;	
+	}
+	if(speedx >= window.innerWidth) {
+		speedx = window.innerWidth;	
+	}
+
+	if(speedx > sfx) {
+		speedx -= mp;
+	} if(speedx < sfx) {
+		speedx += mp;
+	} 
+
+	if(speedy > sfy) {
+		speedy -= mp;
+	} if(speedy < sfy) {
+		speedy += mp;
+	}
+}
+
+function createBug() {
+	sfx = Math.floor(Math.random()*(window.innerWidth-100));
+	sfy = Math.floor(Math.random()*(window.innerHeight-100));
+
+	while (sfx < 500) {
+		sfx = Math.floor(Math.random()*(window.innerWidth-100));
+	}
+	while (sfy < 500) { 
+		sfy = Math.floor(Math.random()*(window.innerHeight-100));
+	}
+
+	mp += 1;
+}
+
+function resetGame() {
+	mp = 0;
+	speedx = 0;
+	speedy = 0;
+	isPaused = false;
+	isGameOver = false;
+	isStarted = false;
+	tempoInicial = new Date().getTime();
+	nivel = 1;
+	createBug();
+}
+
+/* TESTERS */
+
+function testGameOver() {
+	if( (speedx <= sfx+10 && speedx >= sfx-10) && 
+		(speedy <= sfy+10 && speedy >= sfy-10) ) {
+		isGameOver = true;
+	}
+}
+
+function testSaveAnt(x, y) {
+	if(!isGameOver && isStarted && !isPaused && 
+		(x <= sfx+70 && x >= sfx-20) && 
+		(y <= sfy+70 && y >= sfy-20) ) {
+		isSafe = true;
+
+		speedx = 0;
+		speedy = 0;
+		mp += 1;
+		nivel += 1;
+		createBug();
+	}
+}
+
+/* RENDERIZADORES */
+
+function renderBackground() {
+	if(ctx && bkg) {
+		ctx.fillStyle = "white";
+		ctx.fillRect(0,0,window.innerWidth,window.innerHeight);
+		ctx.drawImage(bkg,0,0);
+
+		//Titulo
+		ctx.font = '40pt Calibri';
+	    ctx.lineWidth = 3;
+	    ctx.strokeStyle = 'blue';
+	    ctx.strokeText('Save Ant. V1.0', window.innerWidth/2 , 50);
+	    //By
+		ctx.font = '10pt sans-serif';
+	    ctx.lineWidth = 1;
+	    ctx.strokeStyle = 'red';
+	    ctx.strokeText('por Yuri Fialho', window.innerWidth/2 , 70);
+	}
+}
+
+function renderMenu() {
+	if(ctx) {
+		//Pontos
+	    ctx.font = '20pt sans-serif';
+	    ctx.lineWidth = 1;
+	    ctx.strokeStyle = 'blue';
+	    ctx.strokeText("Pontos: " + (mp == 1 ? 0 : (mp * 100)), 50 , 50);
+	    //Tempo
+	    if(!isPaused && !isGameOver) tempoFinal = new Date().getTime();
+	    ctx.font = '20pt sans-serif';
+	    ctx.lineWidth = 1;
+	    ctx.strokeStyle = 'blue';
+	    ctx.strokeText("Tempo: " + parseInt((tempoFinal - tempoInicial)/1000), 50 , 100);
+	    //Nivel
+	    ctx.font = '20pt sans-serif';
+	    ctx.lineWidth = 1;
+	    ctx.strokeStyle = 'blue';
+	    ctx.strokeText("Nível: " + nivel, 50 , 150);
+	}
+}
+
+function renderGame() {
+	//Draw Ant
+	ctx.drawImage(bugImg,sfx,sfy);
+	//Draw Spider
+	ctx.drawImage(img,speedx,speedy);
+	console.debug("SF: " + sfx + ":" + sfy + " - SP: " + speedx + ":" + speedy);
+}
+
+function renderGameOver() {
+	if(ctx) {
+		ctx.font = '40pt Calibri';
+    	ctx.lineWidth = 3;
+    	ctx.strokeStyle = 'red';
+    	ctx.strokeText("Fim de jogo, você conseguiu: " + (mp == 1 ? 0 : (mp * 100)) + " Pontos", 200 , 400);
+    	ctx.strokeText("(Press <Enter> to start again!)", 200 , 450);
+
+    	ctx.drawImage(overImg, 300, 100);
+	}
+}
+
+function renderPause() {
+	if(ctx) {
+		ctx.font = '40pt Calibri';
+    	ctx.lineWidth = 3;
+    	ctx.strokeStyle = 'red';
+    	ctx.strokeText('Pausado.. (Press P to continue)', 200 , 400);
+	}
+}
+
+function renderSafe() {
+	if(ctx) {
+		ctx.font = '40pt Calibri';
+    	ctx.lineWidth = 3;
+    	ctx.strokeStyle = 'red';
+    	ctx.strokeText("Parabéns, você conseguiu!", 200 , 400);
+    	ctx.strokeText("(Pressione <Enter> para ir ao próximo nível!)", 200 , 450);
+
+    	ctx.drawImage(bugHpy, 300, 200);
+	}
+}
+
+function renderStartGame() {
+	if(ctx) {
+		ctx.font = '40pt Calibri';
+    	ctx.lineWidth = 3;
+    	ctx.strokeStyle = 'red';
+    	ctx.strokeText("Bem vindo!", 200 , 400);
+    	ctx.strokeText("(Pressione <Enter> para iniciar o jogo)", 200 , 450);
 	}
 }
