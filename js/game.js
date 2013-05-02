@@ -21,7 +21,13 @@ tempoFinal = tempoInicial;
 
 nivel = 1;
 
+telaW = null;
+telaH = null;
+
 function setup() {
+	telaW = window.innerWidth - 100;
+	telaH = window.innerHeight - 100;
+	
 	var body = document.getElementById("body");
 
 	var div = document.createElement("div");
@@ -30,8 +36,8 @@ function setup() {
 	var canvas = document.createElement("canvas");
 		canvas.id = "canvas";
 
-		canvas.width = window.innerWidth;
-		canvas.height = window.innerHeight;
+		canvas.width = telaW;
+		canvas.height = telaH;
 
 		canvas.addEventListener("mousedown",saveAnt,false);
 		window.addEventListener("keydown",keyboardEvent, true);
@@ -131,14 +137,14 @@ function processarPassos() {
 	if(speedy <= 0) {
 		speedy = 0;	
 	}
-	if(speedy >= window.innerHeight) {
-		speedy = window.innerHeight;	
+	if(speedy >= telaH) {
+		speedy = telaH;	
 	}
 	if(speedx <= 0) {
 		speedx = 0;	
 	}
-	if(speedx >= window.innerWidth) {
-		speedx = window.innerWidth;	
+	if(speedx >= telaW) {
+		speedx = telaW;	
 	}
 
 	if(speedx > sfx) {
@@ -155,14 +161,14 @@ function processarPassos() {
 }
 
 function createBug() {
-	sfx = Math.floor(Math.random()*(window.innerWidth-100));
-	sfy = Math.floor(Math.random()*(window.innerHeight-100));
+	sfx = Math.floor(Math.random()*(telaW-100));
+	sfy = Math.floor(Math.random()*(telaH-100));
 
 	while (sfx < 500) {
-		sfx = Math.floor(Math.random()*(window.innerWidth-100));
+		sfx = Math.floor(Math.random()*(telaW-100));
 	}
 	while (sfy < 500) { 
-		sfy = Math.floor(Math.random()*(window.innerHeight-100));
+		sfy = Math.floor(Math.random()*(telaH-100));
 	}
 
 	mp += 1;
@@ -209,18 +215,18 @@ function renderBackground() {
 	if(ctx && bkg) {
 		ctx.fillStyle = "white";
 		ctx.fillRect(0,0,window.innerWidth,window.innerHeight);
-		ctx.drawImage(bkg,0,0);
+		printImg(bkg, telaW/2.5, telaH/2)
 
 		//Titulo
 		ctx.font = '40pt Calibri';
 	    ctx.lineWidth = 3;
 	    ctx.strokeStyle = 'blue';
-	    ctx.strokeText('Save Ant. V1.0', window.innerWidth/2 , 50);
+	    ctx.strokeText('Save Ant. V1.0', telaW/2 , 50);
 	    //By
 		ctx.font = '10pt sans-serif';
 	    ctx.lineWidth = 1;
 	    ctx.strokeStyle = 'red';
-	    ctx.strokeText('por Yuri Fialho', window.innerWidth/2 , 70);
+	    ctx.strokeText('por Yuri Fialho', telaW/2 , 70);
 	}
 }
 
@@ -247,21 +253,23 @@ function renderMenu() {
 
 function renderGame() {
 	//Draw Ant
-	ctx.drawImage(bugImg,sfx,sfy);
+	printImg(bugImg,sfx,sfy);
 	//Draw Spider
-	ctx.drawImage(img,speedx,speedy);
+	printImg(img,speedx,speedy);
 	console.debug("SF: " + sfx + ":" + sfy + " - SP: " + speedx + ":" + speedy);
 }
 
 function renderGameOver() {
 	if(ctx) {
-		ctx.font = '40pt Calibri';
+			ctx.font = '40pt Calibri';
     	ctx.lineWidth = 3;
     	ctx.strokeStyle = 'red';
     	ctx.strokeText("Fim de jogo, você conseguiu: " + (mp == 1 ? 0 : (mp * 100)) + " Pontos", 200 , 400);
-    	ctx.strokeText("(Press <Enter> to start again!)", 200 , 450);
-
-    	ctx.drawImage(overImg, 300, 100);
+			ctx.font = '20pt Calibri';
+    	ctx.lineWidth = 1;
+    	ctx.strokeText("(Pressione <Enter> para começar novamente!)", 200 , 430);
+			
+			printImg(overImg,100,400);
 	}
 }
 
@@ -276,13 +284,15 @@ function renderPause() {
 
 function renderSafe() {
 	if(ctx) {
-		ctx.font = '40pt Calibri';
+			ctx.font = '40pt Calibri';
     	ctx.lineWidth = 3;
     	ctx.strokeStyle = 'red';
     	ctx.strokeText("Parabéns, você conseguiu!", 200 , 400);
-    	ctx.strokeText("(Pressione <Enter> para ir ao próximo nível!)", 200 , 450);
-
-    	ctx.drawImage(bugHpy, 300, 200);
+			ctx.font = '20pt Calibri';
+			ctx.lineWidth = 1;
+    	ctx.strokeText("(Pressione <Enter> para ir ao próximo nível!)", 200 , 430);
+			
+			printImg(bugHpy,150,400);
 	}
 }
 
@@ -292,6 +302,21 @@ function renderStartGame() {
     	ctx.lineWidth = 3;
     	ctx.strokeStyle = 'red';
     	ctx.strokeText("Bem vindo!", 200 , 400);
-    	ctx.strokeText("(Pressione <Enter> para iniciar o jogo)", 200 , 450);
+			ctx.font = '20pt Calibri';
+			ctx.lineWidth = 1;
+    	ctx.strokeText("(Pressione <Enter> para iniciar o jogo)", 200 , 430);
 	}
+}
+
+/* UTILS */
+
+function printImg(pimg, x, y) {
+	//dimensoes
+	var w = pimg.width;
+	var h = pimg.height;
+	//centros
+	var cx = -w * 0.5;
+	var cy = -h * 0.5;
+	
+	ctx.drawImage(pimg,0,0,w,h,x + cx,y + cy,w,h);
 }
